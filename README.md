@@ -1,5 +1,7 @@
 # Retro Games
-A couple arcade games I made in python.
+AI using Proximal Policy Optimization to play the game pacman made in PyGame by DevinLeamy.
+I will be using his implementation of the classic game PacMan with the AI to play the game being written by myself.
+
 # Pacman
 The 80s classic Pacman in all its beauty <br/> <br/>
 <!-- <img src="Pacman/Media/menu.png" alt="Pacman Menu Screen" width="400"/> -->
