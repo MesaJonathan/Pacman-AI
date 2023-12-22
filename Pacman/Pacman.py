@@ -125,7 +125,7 @@ class PacManAI:
     # Driver method: The games primary update method
     def update(self, move):
         clock.tick(40)
-        #print(game.move)
+
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -218,7 +218,6 @@ class PacManAI:
                     self.score += 10
                     self.collected += 1
                     # THIS IS NORMAL PELLET EATED
-                    # TODO: add reward for this
                     reward = 3
 
                     # Fill tile with black
@@ -228,7 +227,6 @@ class PacManAI:
                     gameBoard[int(self.pacman.row)][int(self.pacman.col)] = 1
                     self.collected += 1
                     # THIS IS POWER PELLET EATED
-                    # TODO: add reward for this
                     reward = 5
 
                     # Fill tile with black
@@ -241,7 +239,7 @@ class PacManAI:
                         ghost.setTarget()
                         self.ghostsAttacked = True
         possible_reward = self.checkSurroundings()
-        if possible_reward:
+        if possible_reward != 0:
             reward = possible_reward
 
         self.highScore = max(self.score, self.highScore)
@@ -250,6 +248,7 @@ class PacManAI:
         if self.collected == self.total:
             print("AI WIN")
             self.wins += 1
+            self.paused = True
             self.forcePlayMusic("intermission.wav")
             self.level += 1
             self.newLevel()
@@ -259,7 +258,12 @@ class PacManAI:
             running = False
         self.softRender()
 
-        return reward, self.gameOver, self.score
+        if reward < 0:
+            done = True
+        else:
+            done = False
+
+        return reward, done, self.score
 
     # restarts game on death
     def game_reset(self):
@@ -393,7 +397,6 @@ class PacManAI:
                 # self.forcePlayMusic("pacman_death.wav")
 
                 # THIS IS WHERE PACMAN DIES
-                # TODO: add punishment when pacman dies
                 reward = -50
 
                 reset()
@@ -405,7 +408,6 @@ class PacManAI:
                 ghost.col = math.floor(ghost.col)
                 self.score += self.ghostScore
                 # THIS IS GHOST EATED 
-                # TODO: add reward for this
                 reward = 10
 
                 self.points.append([ghost.row, ghost.col, self.ghostScore, 0])

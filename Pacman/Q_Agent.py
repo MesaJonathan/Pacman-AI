@@ -100,7 +100,6 @@ class Q_Agent:
                  ghost3.attacked,
                  ghost4.attacked]
 
-        print(len(state))
         return state
 
     # idk what this does
@@ -136,7 +135,7 @@ class Q_Agent:
             final_move[move] = 1
 
         return final_move
-
+       
 
 def train():
     plot_Q_scores = []
@@ -144,7 +143,7 @@ def train():
     total_Q_score = 0
     Q_record = 0
     q_agent = Q_Agent()
-    game = PacManAI(0,1)
+    game = PacManAI(1,0)
 
     while True:
         # get old state
@@ -156,6 +155,11 @@ def train():
         # do the move and get the new state
         game.move = final_move
         reward, done, score = game.update(final_move)
+        
+        if done:
+            print(done)
+        
+        
         state_new = q_agent.get_state(game)
 
         # train the short memory ???
@@ -166,7 +170,8 @@ def train():
 
         if done:
             #train memory and plot the result
-            game.game_reset()
+            game = PacManAI(1,0)
+            game.render()
             q_agent.n_games += 1 
             q_agent.train_long_memory()
 
