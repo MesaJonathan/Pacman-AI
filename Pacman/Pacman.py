@@ -74,7 +74,7 @@ PLAYING_KEYS = {
 
 class PacManAI:
     def __init__(self, level, score):
-        self.paused = True
+        self.paused = False
         self.ghostUpdateDelay = 1
         self.ghostUpdateCount = 0
         self.pacmanUpdateDelay = 1
@@ -100,7 +100,7 @@ class PacManAI:
             state[1] = randrange(self.levels[index][state[0]] + 1)
             index += 1
         self.collected = 0
-        self.started = False
+        self.started = True
         self.gameOver = False
         self.gameOverCounter = 0
         self.points = []
@@ -117,17 +117,39 @@ class PacManAI:
         self.extraLifeGiven = False
         self.musicPlaying = 0
         self.wins = 0
+        self.gb = gameBoard
+        self.move = [0,1,0,0] 
+        # this is the move that pacman will make 
+        # [up, right, down, left]
 
     # Driver method: The games primary update method
-    # TODO: add final_move as argument to tell pacman what to do 
-    def update(self):
-        # pygame.image.unload()
-        # print(self.ghostStates)
+    def update(self, move):
+        clock.tick(40)
+        #print(game.move)
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+
+        reward = 0
+        self.gb = gameBoard
+        #self.move = move
+       
+        if move[0] == 1:
+            self.pacman.dir = 0
+        elif move[1] == 1:
+            self.pacman.dir = 1
+        elif move[2] == 1:
+            self.pacman.dir = 2
+        elif move[3] == 1:
+            self.pacman.dir = 3
+
         if self.gameOver:
             self.gameOverFunc()
             return
         
         if self.paused or not self.started:
+            print("paused")
             self.drawTilesAround(21, 10)
             self.drawTilesAround(21, 11)
             self.drawTilesAround(21, 12)
@@ -197,6 +219,7 @@ class PacManAI:
                     self.collected += 1
                     # THIS IS NORMAL PELLET EATED
                     # TODO: add reward for this
+                    reward = 3
 
                     # Fill tile with black
                     pygame.draw.rect(screen, (0, 0, 0), (self.pacman.col * square, self.pacman.row * square, square, square))
@@ -206,6 +229,7 @@ class PacManAI:
                     self.collected += 1
                     # THIS IS POWER PELLET EATED
                     # TODO: add reward for this
+                    reward = 5
 
                     # Fill tile with black
                     pygame.draw.rect(screen, (0, 0, 0), (self.pacman.col * square, self.pacman.row * square, square, square))
@@ -216,7 +240,10 @@ class PacManAI:
                         ghost.setAttacked(True)
                         ghost.setTarget()
                         self.ghostsAttacked = True
-        self.checkSurroundings()
+        possible_reward = self.checkSurroundings()
+        if possible_reward:
+            reward = possible_reward
+
         self.highScore = max(self.score, self.highScore)
 
         global running
@@ -232,16 +259,13 @@ class PacManAI:
             running = False
         self.softRender()
 
-        #return reward, self.gameOver, self.score
-
-
+        return reward, self.gameOver, self.score
 
     # restarts game on death
     def game_reset(self):
         print(self.getCount)
         game = PacManAI(0, 1)
         reset()
-
 
     # Render method
     def render(self):
@@ -346,11 +370,13 @@ class PacManAI:
 
     def checkSurroundings(self):
         # Check if pacman got killed
+        reward = 0
         for ghost in self.ghosts:
             if self.touchingPacman(ghost.row, ghost.col) and not ghost.attacked:
                 if self.lives == 1:
                     #this is where pacman loses
                     # TODO: implement large punishment for this 
+                    #reward = -50
 
                     print("You lose")
                     self.forcePlayMusic("death_1.wav")
@@ -363,11 +389,12 @@ class PacManAI:
                     pygame.display.update()
                     pause(10000000)
                     return
-                self.started = False
-                self.forcePlayMusic("pacman_death.wav")
+                self.started = True
+                # self.forcePlayMusic("pacman_death.wav")
 
                 # THIS IS WHERE PACMAN DIES
                 # TODO: add punishment when pacman dies
+                reward = -50
 
                 reset()
             elif self.touchingPacman(ghost.row, ghost.col) and ghost.isAttacked() and not ghost.isDead():
@@ -379,6 +406,7 @@ class PacManAI:
                 self.score += self.ghostScore
                 # THIS IS GHOST EATED 
                 # TODO: add reward for this
+                reward = 10
 
                 self.points.append([ghost.row, ghost.col, self.ghostScore, 0])
                 self.ghostScore *= 2
@@ -393,6 +421,9 @@ class PacManAI:
             self.points.append([self.berryLocation[0], self.berryLocation[1], self.berryScore, 0])
             self.berriesCollected.append(self.berries[(self.level - 1) % 8])
             self.forcePlayMusic("eat_fruit.wav")
+
+        return reward
+        
     # Displays the current score
     def displayScore(self):
         textOneUp = ["tile033.png", "tile021.png", "tile016.png"]
@@ -909,7 +940,7 @@ def reset():
     #game.lives -= 1
     global gameBoard
     gameBoard = copy.deepcopy(originalGameBoard)
-    game.paused = True
+    game.paused = False
     game.render()
 
 def displayLaunchScreen():
@@ -1002,8 +1033,6 @@ running = True
 onLaunchScreen = True
 # displayLaunchScreen()
 onLaunchScreen = False
-game.paused = True
-game.started = False
 game.render()
 clock = pygame.time.Clock()
 
@@ -1012,39 +1041,37 @@ def pause(time):
     while not cur == time:
         cur += 1
 
-while running:
-    clock.tick(40)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            game.recordHighScore()
-        elif event.type == pygame.KEYDOWN:
-            game.paused = False
-            game.started = True
-            if event.key in PLAYING_KEYS["up"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 0
-            elif event.key in PLAYING_KEYS["right"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 1
-            elif event.key in PLAYING_KEYS["down"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 2
-            elif event.key in PLAYING_KEYS["left"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 3
-            # elif event.key == pygame.K_SPACE:
-            #     if onLaunchScreen:
-            #         onLaunchScreen = False
-            #         game.paused = True
-            #         game.started = False
-            #         game.render()
-            #         pygame.mixer.music.load(MusicPath + "pacman_beginning.wav")
-            #         pygame.mixer.music.play()
-            #         musicPlaying = 1
-            elif event.key == pygame.K_q:
-                running = False
-                game.recordHighScore()
+# while running:
+#     clock.tick(40)
+#     #print(game.move)
+#     for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 quit()
+#     game.update(game.move)
 
-    if not onLaunchScreen:
-        game.update()
+    # if game.move[0]:
+    #     if not onLaunchScreen:
+    #         game.pacman.newDir = 0
+    # elif game.move[1] == 1:
+    #     if not onLaunchScreen:
+    #         game.pacman.newDir = 1
+    # elif game.move[2]:
+    #     if not onLaunchScreen:
+    #         game.pacman.newDir = 2
+    # elif game.move[3]:
+    #     if not onLaunchScreen:
+    #         game.pacman.newDir = 3
+        # elif event.key == pygame.K_SPACE:
+        #     if onLaunchScreen:
+        #         onLaunchScreen = False
+        #         game.paused = True
+        #         game.started = False
+        #         game.render()
+        #         pygame.mixer.music.load(MusicPath + "pacman_beginning.wav")
+        #         pygame.mixer.music.play()
+        #         musicPlaying = 1
+    # elif event.key == pygame.K_q:
+    #     running = False
+    #     game.recordHighScore()
+
