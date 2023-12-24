@@ -124,7 +124,7 @@ class PacManAI:
 
     # Driver method: The games primary update method
     def update(self, move):
-        clock.tick(2)   # controls speed of the game
+        clock.tick(120)   # controls speed of the game
 
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -133,16 +133,15 @@ class PacManAI:
 
         reward = 0
         self.gb = gameBoard
-        #self.move = move
        
         if move[0] == 1:
-            self.pacman.dir = 0
+            self.pacman.newDir = 0 
         elif move[1] == 1:
-            self.pacman.dir = 1
+            self.pacman.newDir = 1 
         elif move[2] == 1:
-            self.pacman.dir = 2
+            self.pacman.newDir = 2 
         elif move[3] == 1:
-            self.pacman.dir = 3
+            self.pacman.newDir = 3 
 
         if self.gameOver:
             self.gameOverFunc()

@@ -153,7 +153,6 @@ def train():
         final_move = q_agent.get_action(state_old)
 
         # do the move and get the new state
-        game.move = final_move
         reward, done, score = game.update(final_move)
         
         state_new = q_agent.get_state(game)
