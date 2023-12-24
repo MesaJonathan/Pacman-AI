@@ -5,7 +5,7 @@ from collections import deque #double ended queue
 from Pacman import PacManAI
 from Q_Model import Q_Net, Q_Trainer
 from itertools import chain
-#from graphs import plot
+from graphs import Q_plot
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -124,7 +124,7 @@ class Q_Agent:
     # Asks the model what the move is given this current state
     def get_action(self, state):
         final_move = [0, 0, 0, 0] #[up, down, left, right]
-        self.epsilon = 80 - self.n_games
+        self.epsilon = 140 - self.n_games
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 3)
             final_move[move] = 1
@@ -156,10 +156,6 @@ def train():
         game.move = final_move
         reward, done, score = game.update(final_move)
         
-        if done:
-            print(done)
-        
-        
         state_new = q_agent.get_state(game)
 
         # train the short memory ???
@@ -182,11 +178,11 @@ def train():
             
             #do graphing stuff here
 
-            # plot_scores.append(score)
-            # total_score += score
-            # mean_score = total_score / agent.n_games
-            # plot_mean_scores.append(mean_score)
-            # plot(plot_scores, plot_mean_scores)
+            plot_Q_scores.append(score)
+            total_Q_score += score
+            mean_score = total_Q_score / q_agent.n_games
+            plot_mean_Q_scores.append(mean_score)
+            Q_plot(plot_Q_scores, plot_mean_Q_scores)
 
 if __name__ == "__main__":
     train()

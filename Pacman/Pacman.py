@@ -124,7 +124,7 @@ class PacManAI:
 
     # Driver method: The games primary update method
     def update(self, move):
-        clock.tick(40)
+        clock.tick(2)   # controls speed of the game
 
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -213,7 +213,7 @@ class PacManAI:
             self.pacman.col %= len(gameBoard[0])
             if self.pacman.row % 1.0 == 0 and self.pacman.col % 1.0 == 0:
                 if gameBoard[int(self.pacman.row)][int(self.pacman.col)] == 2:
-                    self.playMusic("munch_1.wav")
+                    #self.playMusic("munch_1.wav")
                     gameBoard[int(self.pacman.row)][int(self.pacman.col)] = 1
                     self.score += 10
                     self.collected += 1
@@ -223,7 +223,7 @@ class PacManAI:
                     # Fill tile with black
                     pygame.draw.rect(screen, (0, 0, 0), (self.pacman.col * square, self.pacman.row * square, square, square))
                 elif gameBoard[int(self.pacman.row)][int(self.pacman.col)] == 5 or gameBoard[int(self.pacman.row)][int(self.pacman.col)] == 6:
-                    self.forcePlayMusic("power_pellet.wav")
+                    #self.forcePlayMusic("power_pellet.wav")
                     gameBoard[int(self.pacman.row)][int(self.pacman.col)] = 1
                     self.collected += 1
                     # THIS IS POWER PELLET EATED
