@@ -280,6 +280,24 @@ class PacManAI:
         game = PacManAI(0, 1)
         reset()
 
+    def find_food(self):
+        above = False
+        right = False
+        below = False
+        left = False
+        for i in range(len(self.gb)):
+            for j in range(len(self.gb[i])):
+                if self.gb[i][j] == 2 and i < self.pacman.row:
+                    above = True
+                if self.gb[i][j] == 2 and j > self.pacman.col:
+                    right = True
+                if self.gb[i][j] == 2 and i > self.pacman.row:
+                    below = True
+                if self.gb[i][j] == 2 and j < self.pacman.col:
+                    left = True
+        return above, right, below, left
+                    
+
     # Render method
     def render(self):
         screen.fill((0, 0, 0)) # Flushes the screen
@@ -1064,7 +1082,7 @@ class Q_Agent:
         self.epsilon = 0    # controls randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
-        self.model = Q_Net(1027, 256, 4) 
+        self.model = Q_Net(23, 19, 4) 
         self.trainer = Q_Trainer(self.model, lr=LR, gamma=self.gamma)
 
     # gets current state of model, takes in the actual game itself
@@ -1076,11 +1094,16 @@ class Q_Agent:
         ghost4 = game.ghosts[3]
         
         # get what direction pellets are relative to pacman
+        above, right, below, left = game.find_food()
         
 
         state = [game.pacman.row, # pacman pos
                  game.pacman.col, 
                  game.pacman.dir, # pac man dir
+                 above,           # food positions
+                 right,
+                 below,
+                 left,
                  ghost1.row,      # ghost positions
                  ghost1.col, 
                  ghost2.row, 
