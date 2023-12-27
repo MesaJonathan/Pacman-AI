@@ -270,7 +270,8 @@ class PacManAI:
         self.pacman.prev_row = self.pacman.row
         self.pacman.prev_col = self.pacman.col
         
-        # print(reward)
+        if reward != 0:
+            print(reward)
         return reward, done, self.score
 
     # restarts game on death
@@ -1075,11 +1076,9 @@ class Q_Agent:
         ghost4 = game.ghosts[3]
         
         # get what direction pellets are relative to pacman
-        gb = game.gb
+        
 
-        flat_board = list(chain.from_iterable(gb))
-
-        state = flat_board + [game.pacman.row, # pacman pos
+        state = [game.pacman.row, # pacman pos
                  game.pacman.col, 
                  game.pacman.dir, # pac man dir
                  ghost1.row,      # ghost positions

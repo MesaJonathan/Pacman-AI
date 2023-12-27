@@ -24,9 +24,11 @@ How was AI implemented
     
 
 1. Q-learning
-    1. Add reward for every positive action that pacman takes(eating pellet/power pellet, eating ghost, eating berry)
-    2. Add punishment for every negative action that pacman takes (dying, losing completely, doing nothing for too long)
-    3. have update function return either if dead or at end of function 
+    rewards:
+    - normal pellet: +3
+    - power pellet: +5
+    - eating ghost: + 10
+    - death: -50
 
 2. PPO
     1. pass
