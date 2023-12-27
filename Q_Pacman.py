@@ -23,7 +23,6 @@ MusicPath = "Assets/Music/"
 
 pygame.mixer.init()
 pygame.init()
-print(pygame.mixer.music.get_busy())
 
 # 28 Across 31 Tall 1: Empty Space 2: Tic-Tak 3: Wall 4: Ghost safe-space 5: Special Tic-Tak
 originalGameBoard = [
@@ -281,20 +280,20 @@ class PacManAI:
         reset()
 
     def find_food(self):
-        above = False
-        right = False
-        below = False
-        left = False
+        above = 0
+        right = 0
+        below = 0
+        left = 0
         for i in range(len(self.gb)):
             for j in range(len(self.gb[i])):
                 if self.gb[i][j] == 2 and i < self.pacman.row:
-                    above = True
+                    above = 1
                 if self.gb[i][j] == 2 and j > self.pacman.col:
-                    right = True
+                    right = 1
                 if self.gb[i][j] == 2 and i > self.pacman.row:
-                    below = True
+                    below = 1
                 if self.gb[i][j] == 2 and j < self.pacman.col:
-                    left = True
+                    left = 1
         return above, right, below, left
                     
 
@@ -728,6 +727,39 @@ class Pacman:
         pacmanImage = pygame.transform.scale(pacmanImage, (int(square * spriteRatio), int(square * spriteRatio)))
         screen.blit(pacmanImage, (self.col * square + spriteOffset, self.row * square + spriteOffset, square, square))
 
+    def can_go(self):
+        can_go_up = 0
+        can_go_right = 0
+        can_go_down = 0
+        can_go_left = 0
+
+        if canMove(math.floor(self.row - self.pacSpeed), self.col) and self.col % 1.0 == 0:
+            can_go_up = 1
+            
+        if canMove(self.row, math.ceil(self.col + self.pacSpeed)) and self.row % 1.0 == 0:
+            can_go_right = 1
+            
+        if canMove(math.ceil(self.row + self.pacSpeed), self.col) and self.col % 1.0 == 0:
+            can_go_down = 1
+            
+        if canMove(self.row, math.floor(self.col - self.pacSpeed)) and self.row % 1.0 == 0:
+            can_go_left = 1
+            
+
+        # if self.dir == 0:
+        #     if canMove(math.floor(self.row - self.pacSpeed), self.col) and self.col % 1.0 == 0:
+        #         self.row -= self.pacSpeed
+        # elif self.dir == 1:
+        #     if canMove(self.row, math.ceil(self.col + self.pacSpeed)) and self.row % 1.0 == 0:
+        #         self.col += self.pacSpeed
+        # elif self.dir == 2:
+        #     if canMove(math.ceil(self.row + self.pacSpeed), self.col) and self.col % 1.0 == 0:
+        #         self.row += self.pacSpeed
+        # elif self.dir == 3:
+        #     if canMove(self.row, math.floor(self.col - self.pacSpeed)) and self.row % 1.0 == 0:
+        #         self.col -= self.pacSpeed
+        return can_go_up, can_go_right, can_go_down, can_go_left
+
 class Ghost:
     def __init__(self, row, col, color, changeFeetCount):
         self.row = row
@@ -1082,7 +1114,7 @@ class Q_Agent:
         self.epsilon = 0    # controls randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
-        self.model = Q_Net(23, 19, 4) 
+        self.model = Q_Net(27, 21, 4) 
         self.trainer = Q_Trainer(self.model, lr=LR, gamma=self.gamma)
 
     # gets current state of model, takes in the actual game itself
@@ -1095,11 +1127,16 @@ class Q_Agent:
         
         # get what direction pellets are relative to pacman
         above, right, below, left = game.find_food()
-        
+        can_go_up, can_go_right, can_go_down, can_go_left = game.pacman.can_go()
 
+        #get what directions pacman can go in the current moment
         state = [game.pacman.row, # pacman pos
                  game.pacman.col, 
                  game.pacman.dir, # pac man dir
+                 can_go_up,       # what dirs can pacman go this iteration?
+                 can_go_right,
+                 can_go_down,
+                 can_go_left,
                  above,           # food positions
                  right,
                  below,
@@ -1168,7 +1205,7 @@ game = PacManAI(1,0)
 ####################################################################################
 # MAIN RUNNING LOOP
 while running:
-    clock.tick(150)
+    clock.tick(60)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
