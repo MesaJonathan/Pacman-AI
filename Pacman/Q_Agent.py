@@ -27,58 +27,11 @@ class Q_Agent:
         ghost2 = game.ghosts[1]
         ghost3 = game.ghosts[2]
         ghost4 = game.ghosts[3]
-
-        ghost_positions = [(ghost1.row, ghost1.col), 
-                           (ghost2.row, ghost2.col), 
-                           (ghost3.row, ghost3.col), 
-                           (ghost4.row, ghost4.col)]
-        
-        ghost_directions = [ghost1.dir,
-                            ghost2.dir, 
-                            ghost3.dir, 
-                            ghost4.dir]
-        
-        # ghost_states = [ghost1.attacked,
-        #                 ghost2.attacked,
-        #                 ghost3.attacked,
-        #                 ghost4.attacked]
-
-        # pac man position and dir
-        pacman_pos = (game.pacman.row, game.pacman.col)
-
-        pacman_dir = game.pacman.dir
         
         # get what direction pellets are relative to pacman
         gb = game.gb
 
-        # food_up = 0 
-        # for row in range(int(pacman_pos[0])):
-        #     if (2 in gb[row]) or (6 in gb[row]):
-        #         food_up = 1
-
-        # food_down = 0
-        # for row in range(int(pacman_pos[0]), len(gb)):
-        #     if (2 in gb[row]) or (6 in gb[row]):
-        #         food_down = 1
-
-        # food_left = 0
-        # for row in gb:
-        #     for col in range(int(pacman_pos[1])):
-        #         if (2 in gb[row][col]) or (6 in gb[row][col]):
-        #             food_left = 1
-
-        # food_right = 0
-        # for row in gb:
-        #     for col in range((pacman_pos[1]), len(gb[row])):
-        #         if (2 in gb[row][col]) or (6 in gb[row][col]):
-        #             food_right = 1
-
-
-        # pellets = [food_up, food_left, food_right, food_down]
-
         flat_board = list(chain.from_iterable(gb))
-
-        #print(len(flat_board))
 
         state = flat_board + [game.pacman.row, # pacman pos
                  game.pacman.col, 

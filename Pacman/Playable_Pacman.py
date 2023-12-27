@@ -74,7 +74,7 @@ PLAYING_KEYS = {
 
 class Game:
     def __init__(self, level, score):
-        self.paused = True
+        self.paused = False
         self.ghostUpdateDelay = 1
         self.ghostUpdateCount = 0
         self.pacmanUpdateDelay = 1
@@ -100,7 +100,7 @@ class Game:
             state[1] = randrange(self.levels[index][state[0]] + 1)
             index += 1
         self.collected = 0
-        self.started = False
+        self.started = True
         self.gameOver = False
         self.gameOverCounter = 0
         self.points = []
@@ -119,9 +119,8 @@ class Game:
 
     # Driver method: The games primary update method
     def update(self):
-        # pygame.image.unload()
-        #print(self.ghostStates)
-        # print(self.ghosts[0].target, self.ghosts[1].target, self.ghosts[2].target, self.ghosts[3].target)
+        
+
         if self.gameOver:
             self.gameOverFunc()
             return
@@ -340,7 +339,7 @@ class Game:
                     pygame.display.update()
                     pause(10000000)
                     return
-                self.started = False
+                self.started = True
                 self.forcePlayMusic("pacman_death.wav")
                 reset()
             elif self.touchingPacman(ghost.row, ghost.col) and ghost.isAttacked() and not ghost.isDead():
@@ -560,7 +559,7 @@ class Pacman:
         self.mouthChangeDelay = 5
         self.mouthChangeCount = 0
         self.dir = 0 # 0: North, 1: East, 2: South, 3: West
-        self.newDir = 0
+        self.newDir = 1
 
     def update(self):
         if self.newDir == 0:
@@ -679,7 +678,6 @@ class Ghost:
             self.deathCount += 1
             self.attacked = False
             if self.deathCount == self.deathTimer:
-                print("freed")
                 self.deathCount = 0
                 self.dead = False
                 self.ghostSpeed = 1/4
@@ -787,7 +785,6 @@ class Ghost:
     def setTarget(self):
         if gameBoard[int(self.row)][int(self.col)] == 4 and not self.dead:
             self.target = [ghostGate[0][0] - 1, ghostGate[0][1]+1]
-            print(self.color, "freed")
             return
         elif gameBoard[int(self.row)][int(self.col)] == 4 and self.dead:
             self.target = [self.row, self.col]
@@ -822,6 +819,7 @@ class Ghost:
             elif self.target[0] > 15 and self.target[1] >= 13:
                 quad = 3
             if not gameBoard[self.target[0]][self.target[1]] == 3 and not gameBoard[self.target[0]][self.target[1]] == 4:
+                print(self.color, "leaves")
                 break
             elif quads[quad] == 0:
                 break
@@ -877,7 +875,8 @@ def reset():
         ghost.setTarget()
     game.pacman = Pacman(26.0, 13.5)
     game.lives -= 1
-    game.paused = True
+    game.paused = False
+    game.started = True
     game.render()
 
 def displayLaunchScreen():
@@ -967,9 +966,10 @@ def displayLaunchScreen():
     pygame.display.update()
 
 running = True
-onLaunchScreen = True
-displayLaunchScreen()
+onLaunchScreen = False
 clock = pygame.time.Clock()
+
+game.render()
 
 def pause(time):
     cur = 0
@@ -977,38 +977,11 @@ def pause(time):
         cur += 1
 
 while running:
-    clock.tick(40)
+    clock.tick(60)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            game.recordHighScore()
-        elif event.type == pygame.KEYDOWN:
-            game.paused = False
-            game.started = True
-            if event.key in PLAYING_KEYS["up"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 0
-            elif event.key in PLAYING_KEYS["right"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 1
-            elif event.key in PLAYING_KEYS["down"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 2
-            elif event.key in PLAYING_KEYS["left"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 3
-            elif event.key == pygame.K_SPACE:
-                if onLaunchScreen:
-                    onLaunchScreen = False
-                    game.paused = True
-                    game.started = False
-                    game.render()
-                    pygame.mixer.music.load(MusicPath + "pacman_beginning.wav")
-                    pygame.mixer.music.play()
-                    musicPlaying = 1
-            elif event.key == pygame.K_q:
-                running = False
-                game.recordHighScore()
+            pygame.quit()
+            quit()
 
-    if not onLaunchScreen:
-        game.update()
+    game.update()

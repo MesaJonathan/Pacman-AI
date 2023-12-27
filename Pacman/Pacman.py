@@ -118,13 +118,12 @@ class PacManAI:
         self.musicPlaying = 0
         self.wins = 0
         self.gb = gameBoard
-        self.move = [0,1,0,0] 
         # this is the move that pacman will make 
         # [up, right, down, left]
 
     # Driver method: The games primary update method
     def update(self, move):
-        clock.tick(120)   # controls speed of the game
+        clock.tick(60)   # controls speed of the game
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -239,6 +238,7 @@ class PacManAI:
         possible_reward = self.checkSurroundings()
         if possible_reward != 0:
             reward = possible_reward
+        
 
         self.highScore = max(self.score, self.highScore)
 
@@ -849,7 +849,7 @@ class Ghost:
     def setTarget(self):
         if gameBoard[int(self.row)][int(self.col)] == 4 and not self.dead:
             self.target = [ghostGate[0][0] - 1, ghostGate[0][1]+1]
-            print(self.color, "freed")
+            #print(self.color, "freed")
             return
         elif gameBoard[int(self.row)][int(self.col)] == 4 and self.dead:
             self.target = [self.row, self.col]
@@ -884,6 +884,7 @@ class Ghost:
             elif self.target[0] > 15 and self.target[1] >= 13:
                 quad = 3
             if not gameBoard[self.target[0]][self.target[1]] == 3 and not gameBoard[self.target[0]][self.target[1]] == 4:
+                print(self.color, "leaves")
                 break
             elif quads[quad] == 0:
                 break
@@ -1031,8 +1032,6 @@ def displayLaunchScreen():
     pygame.display.update()
 
 running = True
-onLaunchScreen = True
-# displayLaunchScreen()
 onLaunchScreen = False
 game.render()
 clock = pygame.time.Clock()
@@ -1041,38 +1040,4 @@ def pause(time):
     cur = 0
     while not cur == time:
         cur += 1
-
-# while running:
-#     clock.tick(40)
-#     #print(game.move)
-#     for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 pygame.quit()
-#                 quit()
-#     game.update(game.move)
-
-    # if game.move[0]:
-    #     if not onLaunchScreen:
-    #         game.pacman.newDir = 0
-    # elif game.move[1] == 1:
-    #     if not onLaunchScreen:
-    #         game.pacman.newDir = 1
-    # elif game.move[2]:
-    #     if not onLaunchScreen:
-    #         game.pacman.newDir = 2
-    # elif game.move[3]:
-    #     if not onLaunchScreen:
-    #         game.pacman.newDir = 3
-        # elif event.key == pygame.K_SPACE:
-        #     if onLaunchScreen:
-        #         onLaunchScreen = False
-        #         game.paused = True
-        #         game.started = False
-        #         game.render()
-        #         pygame.mixer.music.load(MusicPath + "pacman_beginning.wav")
-        #         pygame.mixer.music.play()
-        #         musicPlaying = 1
-    # elif event.key == pygame.K_q:
-    #     running = False
-    #     game.recordHighScore()
 
