@@ -279,22 +279,38 @@ class PacManAI:
         game = PacManAI(0, 1)
         reset()
 
-    def find_food(self):
-        above = 0
-        right = 0
-        below = 0
-        left = 0
-        for i in range(len(self.gb)):
-            for j in range(len(self.gb[i])):
-                if self.gb[i][j] == 2 and i < self.pacman.row:
-                    above = 1
-                if self.gb[i][j] == 2 and j > self.pacman.col:
-                    right = 1
-                if self.gb[i][j] == 2 and i > self.pacman.row:
-                    below = 1
-                if self.gb[i][j] == 2 and j < self.pacman.col:
-                    left = 1
-        return above, right, below, left
+    def closest_food(self):
+        # Define the directions for moving in 4 directions (up, down, left, right)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        # Create a queue for BFS
+        queue = deque([(math.floor(self.pacman.row), math.floor(self.pacman.col), 0)])
+
+        # Create a set to keep track of visited positions
+        visited = set()
+
+        while queue:
+            row, col, distance = queue.popleft()
+
+            # Check if the current position contains food (3)
+            # can also return distance here, i just didnt bc idk if ill need
+            if self.gb[row][col] == 2:
+                return row, col
+
+            # Mark the current position as visited
+            visited.add((row, col))
+
+            # Explore adjacent positions
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+
+                # Check if the new position is within the board boundaries and not visited
+                if 0 <= new_row < len(self.gb) and 0 <= new_col < len(self.gb[0]) and (new_row, new_col) not in visited:
+                    # Add the new position to the queue with increased distance
+                    queue.append((new_row, new_col, distance + 1))
+
+        # If no food is found, return None (should never happen)
+        return None
                     
 
     # Render method
@@ -1114,7 +1130,7 @@ class Q_Agent:
         self.epsilon = 0    # controls randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
-        self.model = Q_Net(27, 21, 4) 
+        self.model = Q_Net(25, 19, 4) 
         self.trainer = Q_Trainer(self.model, lr=LR, gamma=self.gamma)
 
     # gets current state of model, takes in the actual game itself
@@ -1126,7 +1142,7 @@ class Q_Agent:
         ghost4 = game.ghosts[3]
         
         # get what direction pellets are relative to pacman
-        above, right, below, left = game.find_food()
+        food_row, food_col = game.closest_food()
         can_go_up, can_go_right, can_go_down, can_go_left = game.pacman.can_go()
 
         #get what directions pacman can go in the current moment
@@ -1137,10 +1153,8 @@ class Q_Agent:
                  can_go_right,
                  can_go_down,
                  can_go_left,
-                 above,           # food positions
-                 right,
-                 below,
-                 left,
+                 food_row,           # closest food positions
+                 food_col,
                  ghost1.row,      # ghost positions
                  ghost1.col, 
                  ghost2.row, 
