@@ -265,6 +265,12 @@ class PacManAI:
         else:
             done = False
 
+        if self.pacman.row == self.pacman.prev_row and self.pacman.col == self.pacman.prev_col:
+            reward = -5
+        self.pacman.prev_row = self.pacman.row
+        self.pacman.prev_col = self.pacman.col
+        
+        # print(reward)
         return reward, done, self.score
 
     # restarts game on death
@@ -622,6 +628,8 @@ class Pacman:
     def __init__(self, row, col):
         self.row = row
         self.col = col
+        self.prev_row = -1
+        self.prev_col = -1
         self.mouthOpen = False
         self.pacSpeed = 1/4
         self.mouthChangeDelay = 5
@@ -1138,7 +1146,7 @@ game = PacManAI(1,0)
 ####################################################################################
 # MAIN RUNNING LOOP
 while running:
-    clock.tick(130)
+    clock.tick(150)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
