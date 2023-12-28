@@ -12,7 +12,7 @@ class Q_Net(nn.Module):
 
 
     def forward(self, x):
-        out = F.relu(self.linear1(x))
+        out = F.relu(F.relu(F.relu(F.relu(self.linear1(x)))))
         out = self.linear2(out)
         return out
 

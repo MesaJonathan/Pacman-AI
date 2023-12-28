@@ -269,8 +269,7 @@ class PacManAI:
         self.pacman.prev_row = self.pacman.row
         self.pacman.prev_col = self.pacman.col
         
-        if reward != 0:
-            print(reward)
+        
         return reward, done, self.score
 
     # restarts game on death
@@ -279,23 +278,30 @@ class PacManAI:
         game = PacManAI(0, 1)
         reset()
 
-    def closest_food(self):
+    def closest_food_dir(self):
         # Define the directions for moving in 4 directions (up, down, left, right)
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
         # Create a queue for BFS
-        queue = deque([(math.floor(self.pacman.row), math.floor(self.pacman.col), 0)])
+        queue = deque([(math.floor(self.pacman.row), math.floor(self.pacman.col))])
 
         # Create a set to keep track of visited positions
         visited = set()
 
         while queue:
-            row, col, distance = queue.popleft()
+            row, col = queue.popleft()
 
-            # Check if the current position contains food (3)
-            # can also return distance here, i just didnt bc idk if ill need
+            # Check if the current position contains food (2)
             if self.gb[row][col] == 2:
-                return row, col
+                # Calculate the direction to reach the food
+                if row < self.pacman.row:
+                    return 1, 0, 0, 0
+                elif row > self.pacman.row:
+                    return 0, 0, 1, 0
+                elif col < self.pacman.col:
+                    return 0, 0, 0, 1
+                else:
+                    return 0, 1, 0, 0
 
             # Mark the current position as visited
             visited.add((row, col))
@@ -306,12 +312,33 @@ class PacManAI:
 
                 # Check if the new position is within the board boundaries and not visited
                 if 0 <= new_row < len(self.gb) and 0 <= new_col < len(self.gb[0]) and (new_row, new_col) not in visited:
-                    # Add the new position to the queue with increased distance
-                    queue.append((new_row, new_col, distance + 1))
+                    # Add the new position to the queue
+                    queue.append((new_row, new_col))
 
-        # If no food is found, return None (should never happen)
+        # If no food is found, return None
         return None
-                    
+
+    def danger(self):
+         # Define the directions for moving in 4 directions (up, down, left, right)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        direction_names = [(1,0,0,0), (0,0,1,0), (0,0,0,1), (0,1,0,0)]
+
+        for ghost in self.ghosts:
+            # Calculate the distance between Pacman and the ghost
+            distance = abs(self.pacman.row - ghost.row) + abs(self.pacman.col - ghost.col)
+
+            # Check if the ghost is within 2 spaces of Pacman
+            if distance <= 2:
+                # Calculate the direction of the ghost relative to Pacman
+                row_diff = ghost.row - self.pacman.row
+                col_diff = ghost.col - self.pacman.col
+
+                for i, (dr, dc) in enumerate(directions):
+                    if (dr, dc) == (row_diff, col_diff):
+                        return direction_names[i]
+
+        # If no ghosts are within 2 spaces of Pacman, return None
+        return 0, 0, 0, 0             
 
     # Render method
     def render(self):
@@ -1130,7 +1157,7 @@ class Q_Agent:
         self.epsilon = 0    # controls randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
-        self.model = Q_Net(25, 19, 4) 
+        self.model = Q_Net(20, 18, 4) 
         self.trainer = Q_Trainer(self.model, lr=LR, gamma=self.gamma)
 
     # gets current state of model, takes in the actual game itself
@@ -1142,39 +1169,58 @@ class Q_Agent:
         ghost4 = game.ghosts[3]
         
         # get what direction pellets are relative to pacman
-        food_row, food_col = game.closest_food()
+        food_dir_u, food_dir_r, food_dir_d, food_dir_l = game.closest_food_dir()
         can_go_up, can_go_right, can_go_down, can_go_left = game.pacman.can_go()
+        danger_u, danger_r, danger_d, danger_l = game.danger()
 
         #print("pacman: ", game.pacman.row, game.pacman.col, "closest food: ", food_row, food_col)
+        if danger_u:
+            print("danger up")
+        if danger_r:
+            print("danger right")
+        if danger_d:
+            print("danger down")
+        if danger_l:
+            print("danger left")
+
+
+        # figure out what dir pacman is going 
+        dir_u = 0
+        dir_r = 0
+        dir_d = 0
+        dir_l = 0
+        if game.pacman.dir == 0:
+            dir_u = 1
+        elif game.pacman.dir == 0:
+            dir_r = 1
+        elif game.pacman.dir == 0:
+            dir_d = 1
+        elif game.pacman.dir == 0:
+            dir_l = 1
 
         #get what directions pacman can go in the current moment
-        state = [game.pacman.row, # pacman pos
-                 game.pacman.col, 
-                 game.pacman.dir, # pac man dir
+        state = [dir_u, # pac man dir
+                 dir_r,
+                 dir_d,
+                 dir_l,
                  can_go_up,       # what dirs can pacman go this iteration?
                  can_go_right,
                  can_go_down,
                  can_go_left,
-                 food_row,           # closest food positions
-                 food_col,
-                 ghost1.row,      # ghost positions
-                 ghost1.col, 
-                 ghost2.row, 
-                 ghost2.col, 
-                 ghost3.row, 
-                 ghost3.col, 
-                 ghost4.row, 
-                 ghost4.col, 
-                 ghost1.dir,      # ghost directions
-                 ghost2.dir, 
-                 ghost3.dir, 
-                 ghost4.dir, 
+                 food_dir_u,           # closest food positions
+                 food_dir_r,
+                 food_dir_d,
+                 food_dir_l,
+                 danger_u,          #direction of danger
+                 danger_r,
+                 danger_d,
+                 danger_l, 
                  ghost1.attacked, #ghost states
                  ghost2.attacked,
                  ghost3.attacked,
                  ghost4.attacked]
 
-        return state
+        return np.array(state, dtype=int)
 
     # idk what this does
     def remember(self, state, action, reward, next_state, done):
@@ -1188,6 +1234,10 @@ class Q_Agent:
             mini_sample = self.memory
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
+        states = np.array(states)
+        actions = np.array(actions)
+        rewards = np.array(rewards)
+        next_states = np.array(next_states)
         self.trainer.train_step(states, actions, rewards, next_states, dones)
 
 
@@ -1221,7 +1271,7 @@ game = PacManAI(1,0)
 ####################################################################################
 # MAIN RUNNING LOOP
 while running:
-    clock.tick(1)
+    clock.tick(150)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -1235,6 +1285,10 @@ while running:
 
     # do the move and get the new state
     reward, done, score = game.update(final_move)
+
+    # if reward != 0:
+    #         print(reward)
+    # print(state_old)
     
     state_new = q_agent.get_state(game)
 
@@ -1263,3 +1317,6 @@ while running:
         mean_score = total_Q_score / q_agent.n_games
         plot_mean_Q_scores.append(mean_score)
         Q_plot(plot_Q_scores, plot_mean_Q_scores)
+
+
+
