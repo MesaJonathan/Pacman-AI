@@ -218,7 +218,7 @@ class PacManAI:
                     self.score += 10
                     self.collected += 1
                     # THIS IS NORMAL PELLET EATED
-                    reward = 3
+                    reward = 10
 
                     # Fill tile with black
                     pygame.draw.rect(screen, (0, 0, 0), (self.pacman.col * square, self.pacman.row * square, square, square))
@@ -227,7 +227,7 @@ class PacManAI:
                     gameBoard[int(self.pacman.row)][int(self.pacman.col)] = 1
                     self.collected += 1
                     # THIS IS POWER PELLET EATED
-                    reward = 5
+                    reward = 20
 
                     # Fill tile with black
                     pygame.draw.rect(screen, (0, 0, 0), (self.pacman.col * square, self.pacman.row * square, square, square))
@@ -265,7 +265,7 @@ class PacManAI:
             done = False
 
         if self.pacman.row == self.pacman.prev_row and self.pacman.col == self.pacman.prev_col:
-            reward = -5
+            reward = -10
         self.pacman.prev_row = self.pacman.row
         self.pacman.prev_col = self.pacman.col
         
@@ -450,7 +450,7 @@ class PacManAI:
                 ghost.col = math.floor(ghost.col)
                 self.score += self.ghostScore
                 # THIS IS GHOST EATED 
-                reward = 10
+                reward = 30
 
                 self.points.append([ghost.row, ghost.col, self.ghostScore, 0])
                 self.ghostScore *= 2
@@ -1121,7 +1121,7 @@ def pause(time):
 ####################################################################################
 # CODE FOR Q_AGENT
 MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
+BATCH_SIZE = 100
 LR = 0.001    #learning rate
 
 class Q_Agent:
@@ -1144,6 +1144,8 @@ class Q_Agent:
         # get what direction pellets are relative to pacman
         food_row, food_col = game.closest_food()
         can_go_up, can_go_right, can_go_down, can_go_left = game.pacman.can_go()
+
+        #print("pacman: ", game.pacman.row, game.pacman.col, "closest food: ", food_row, food_col)
 
         #get what directions pacman can go in the current moment
         state = [game.pacman.row, # pacman pos
@@ -1219,7 +1221,7 @@ game = PacManAI(1,0)
 ####################################################################################
 # MAIN RUNNING LOOP
 while running:
-    clock.tick(60)
+    clock.tick(1)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
