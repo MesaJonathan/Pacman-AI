@@ -6,6 +6,7 @@ from collections import deque #double ended queue
 from Q_Model import Q_Net, Q_Trainer
 from itertools import chain
 from graphs import Q_plot
+import heapq
 # ------------------------------------------------------
 # for the pacman game
 import pygame
@@ -14,6 +15,7 @@ from random import randrange
 import random
 import copy
 import os
+import copy
 
 BoardPath = "Assets/BoardImages/"
 ElementPath = "Assets/ElementImages/"
@@ -63,6 +65,7 @@ originalGameBoard = [
     [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
     [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
 ]
+
 gameBoard = copy.deepcopy(originalGameBoard)
 spriteRatio = 3/2
 square = 25 # Size of each unit square
@@ -132,7 +135,7 @@ class PacManAI:
 
     # Driver method: The games primary update method
     def update(self, move):
-        reward = 0
+        reward = -3
         self.gb = gameBoard
        
         if move[0] == 1:
@@ -239,7 +242,7 @@ class PacManAI:
                         ghost.setTarget()
                         self.ghostsAttacked = True
         possible_reward = self.checkSurroundings()
-        if possible_reward != 0:
+        if possible_reward != -3:
             reward = possible_reward
         
 
@@ -278,85 +281,63 @@ class PacManAI:
         game = PacManAI(0, 1)
         reset()
 
-    def closest_food(self):
-        # Define the directions for moving in 4 directions (up, down, left, right)
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        direction_names = ['UP', 'DOWN', 'LEFT', 'RIGHT']
-
-        for ghost in self.ghosts:
-            # Calculate the distance between Pacman and the ghost
-            distance = abs(self.pacman.row - ghost.row) + abs(self.pacman.col - ghost.col)
-
-            # Check if the ghost is within 2 spaces of Pacman
-            if distance <= 2:
-                # Calculate the direction of the ghost relative to Pacman
-                row_diff = ghost.row - self.pacman.row
-                col_diff = ghost.col - self.pacman.col
-
-                for i, (dr, dc) in enumerate(directions):
-                    if (dr, dc) == (row_diff, col_diff):
-                        return direction_names[i]
-
-        # If no ghosts are within 2 spaces of Pacman, return None
-        return None
-
     def closest_food_dir(self):
-        # Define the directions for moving in 4 directions (up, down, left, right)
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        direction_names = [(1,0,0,0), (0,0,1,0), (0,0,0,1), (0,1,0,0)]
-
+        # establish that ghosts are walls so they effectively block path
+        temp_gb = copy.deepcopy(self.gb)
         for ghost in self.ghosts:
-            # Calculate the distance between Pacman and the ghost
-            distance = abs(self.pacman.row - ghost.row) + abs(self.pacman.col - ghost.col)
+            if round(ghost.row) < len(temp_gb) and round(ghost.col) < len(temp_gb[0]):
+                temp_gb[round(ghost.row)][round(ghost.col)] = 3
 
-            # Check if the ghost is within 2 spaces of Pacman
-            if distance <= 2:
-                # Calculate the direction of the ghost relative to Pacman
-                row_diff = ghost.row - self.pacman.row
-                col_diff = ghost.col - self.pacman.col
+        rows, cols = len(temp_gb), len(temp_gb[0])
+        visited = [[False for _ in range(cols)] for _ in range(rows)]
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
-                for i, (dr, dc) in enumerate(directions):
-                    if (dr, dc) == (row_diff, col_diff):
-                        return direction_names[i]
+        queue = deque([(round(self.pacman.row), round(self.pacman.col), None)])  # (row, col, direction)
+        if round(self.pacman.row) < len(visited) and round(self.pacman.col) < len(visited[0]):
+            visited[round(self.pacman.row)][round(self.pacman.col)] = True
 
-        # If no ghosts are within 2 spaces of Pacman, find the next closest food
-        closest_food = self.closest_food()
+        while queue:
+            current_row, current_col, direction = queue.popleft()
 
-        if closest_food:
-            food_row, food_col= closest_food
+            if current_row < len(temp_gb) and current_col < len(temp_gb[0]) and temp_gb[current_row][current_col] in [2, 6] and direction != None:
+                return direction
 
-            # Calculate the direction to reach the next closest food
-            row_diff = food_row - self.pacman.row
-            col_diff = food_col - self.pacman.col
+            for dr, dc in directions:
+                new_row, new_col = current_row + dr, current_col + dc
 
-            for i, (dr, dc) in enumerate(directions):
-                if (dr, dc) == (row_diff, col_diff):
-                    return direction_names[i]
+                if 0 <= new_row < rows and 0 <= new_col < cols and not visited[new_row][new_col] and temp_gb[new_row][new_col] != 3 and temp_gb[new_row][new_col] != 4:
+                    queue.append((new_row, new_col, direction if direction is not None else (dr, dc)))
+                    visited[new_row][new_col] = True
 
-        # If no ghosts and no food are found, return None
-        return 0, 0, 0, 0
+        return (0, 0) # No food (2 or 6) found reachable from the starting position
 
     def danger(self):
         # Define the directions for moving in 4 directions (up, down, left, right)
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        direction_names = [(1,0,0,0), (0,0,1,0), (0,0,0,1), (0,1,0,0)]
+        d = 1
+        danger_dir = [0, 0, 0, 0]
 
         for ghost in self.ghosts:
-            # Calculate the distance between Pacman and the ghost
-            distance = abs(self.pacman.row - ghost.row) + abs(self.pacman.col - ghost.col)
+            if ghost.attacked == True:
+                continue
+            row_diff = ghost.row - self.pacman.row
+            col_diff = ghost.col - self.pacman.col
 
-            # Check if the ghost is within 2 spaces of Pacman
-            if distance <= 4:
-                # Calculate the direction of the ghost relative to Pacman
-                row_diff = ghost.row - self.pacman.row
-                col_diff = ghost.col - self.pacman.col
-
-                for i, (dr, dc) in enumerate(directions):
-                    if (dr, dc) == (row_diff, col_diff):
-                        return direction_names[i]
+            # danger up
+            if abs(row_diff) <= d and row_diff < 0 and col_diff == 0:
+                danger_dir[0] = 1
+            #danger right
+            if abs(col_diff) <= d and col_diff > 0 and row_diff == 0:
+                danger_dir[1] = 1
+            #danger down
+            if abs(row_diff) <= d and row_diff > 0 and col_diff == 0:
+                danger_dir[2] = 1
+            #danger left
+            if abs(col_diff) <= d and col_diff < 0 and row_diff == 0:
+                danger_dir[3] = 1
 
         # If no ghosts are within 2 spaces of Pacman, return None
-        return 0, 0, 0, 0             
+        return danger_dir             
+
 
     # Render method
     def render(self):
@@ -1185,15 +1166,29 @@ class Q_Agent:
         ghost2 = game.ghosts[1]
         ghost3 = game.ghosts[2]
         ghost4 = game.ghosts[3]
+
+        food_dir_u = 0
+        food_dir_r = 0
+        food_dir_d = 0
+        food_dir_l = 0
         
-        # get what direction pellets are relative to pacman
-        food_dir_u, food_dir_r, food_dir_d, food_dir_l = game.closest_food_dir()
+        ud, lfr = game.closest_food_dir()
+
+        if ud == -1:
+            print("up")
+            food_dir_u = 1
+        elif lfr == 1:
+            print("right")
+            food_dir_r = 1
+        elif ud == 1:
+            print("down")
+            food_dir_d = 1
+        elif lfr == -1:
+            print("left")
+            food_dir_l = 1
+        
         can_go_up, can_go_right, can_go_down, can_go_left = game.pacman.can_go()
         danger_u, danger_r, danger_d, danger_l = game.danger()
-
-        #print("pacman: ", game.pacman.row, game.pacman.col, "closest food: ", food_row, food_col)
-
-
 
         # figure out what dir pacman is going 
         dir_u = 0
@@ -1202,12 +1197,13 @@ class Q_Agent:
         dir_l = 0
         if game.pacman.dir == 0:
             dir_u = 1
-        elif game.pacman.dir == 0:
+        elif game.pacman.dir == 1:
             dir_r = 1
-        elif game.pacman.dir == 0:
+        elif game.pacman.dir == 2:
             dir_d = 1
-        elif game.pacman.dir == 0:
+        elif game.pacman.dir == 3:
             dir_l = 1
+
 
         #get what directions pacman can go in the current moment
         state = [dir_u, # pac man dir
@@ -1278,7 +1274,7 @@ total_Q_score = 0
 Q_record = 0
 q_agent = Q_Agent()
 game = PacManAI(1,0)
-tick_rate = 180
+tick_rate = 3
 
 ####################################################################################
 # MAIN RUNNING LOOP
@@ -1291,7 +1287,7 @@ while running:
             quit()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
-                tick_rate = 4
+                tick_rate = 10
             elif event.key == pygame.K_2:
                 tick_rate = 60
             elif event.key == pygame.K_3:
@@ -1328,7 +1324,7 @@ while running:
         # high score
         if score > Q_record:
             Q_record = score
-            #q_agent.model.save()
+            q_agent.model.save()
         
         #do graphing stuff here
 
